@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: generichttpendpoint  
+  labels:
+    app: generichttpendpoint    
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: generichttpendpoint
+  minReadySeconds: 1
+  strategy:
+    type: RollingUpdate    
+  template:
+    metadata:
+      annotations:
+          dapr.io/enabled: "true"
+          dapr.io/app-id: "generichttpendpoint"          
+          dapr.io/app-port: "80"
+          dapr.io/config: "appconfig"
+          dapr.io/log-level: "debug"          
+      labels:
+        app: generichttpendpoint        
+    spec:
+      containers:
+      - name: generichttpendpoint        
+        image: dmxacrmaster-microsoft.azurecr.io/generichttpendpoint
+        imagePullPolicy: Always
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 250m
+            memory: 256Mi
+        ports:
+          - containerPort: 80
+            name: http         
+            protocol: TCP
+        env: 
+          - name: "PORT"
+            value: "80"          
+          - name: "APPINSIGHTS_INSTRUMENTATIONKEY"
+            value: "917bb16b-a918-4192-9949-d9151240aeb7"  
+          # - name: "TARGETURL"
+          #   value: "http://httpstatuscodecreator"
+          - name: "TARGETURL"
+            value: "http://localhost:3500/v1.0/invoke/httpstatuscodecreator/method/?code=200"
+          - name: "TIMEOUT"
+            value: "1000"
+          - name: "INSTANCENAME"
+            value: instanceA
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: generichttpendpoint
+  labels:
+    name: generichttpendpoint    
+spec:
+  selector:
+    app: generichttpendpoint
+  type: LoadBalancer
+  ports:
+   - port: 80
+     name: http
+     targetPort: 80
+     protocol: TCP
+---     
